@@ -113,7 +113,7 @@ module.exports={
                 }
             }
             ]).toArray()
-            console.log(cartItems[0].products)
+            //console.log(cartItems[0].products)
             resolve(cartItems)
             //first find the corresponding user's cart and collect the products in the document
         })
@@ -134,7 +134,7 @@ module.exports={
         details.quantity=parseInt(details.quantity)
         
         return new Promise((resolve,reject)=>{
-            console.log(details.count,details.quantity)
+            // console.log(details.count,details.quantity)
             if(details.count==-1 && details.quantity==1){
                 
             db.get().collection(collection.CART_COLLECTION).updateOne({
@@ -153,14 +153,14 @@ module.exports={
                     $inc:{'products.$.quantity':details.count}
                  }).then((response)=>{
                     
-                    resolve(true)
+                    resolve({status:true})
                  })
             }
         }) 
 
     },
     removeProd:(product)=>{
-        return Promise((resolve,reject)=>{
+        return new Promise((resolve,reject)=>{
 
         
         db.get().collection(collection.CART_COLLECTION).updateOne({
@@ -210,11 +210,90 @@ module.exports={
                 }
             }
             ]).toArray()
-            console.log(total[0].total)
-            resolve(total[0].total)
+            // console.log(total[0].total)
+            if(total[0]){
+                resolve(total[0].total)
+            }else{
+                resolve(0)
+            }
+            
             
         })
-    }
+    },
+    placeOrder:(order,products,total)=>{
+        return new Promise((resolve,reject)=>{
+            console.log(order,products,total)
+            let status=order['payment-method']==='COD'?'placed':"pending"
+            let orderObj={
+                deliveryDetails:{
+                    mobile:order.mobile,
+                    address:order.address,
+                    pincode:order.pincode
+                },
+                userId:objectId(order.userId),
+                paymentMethod:order['payment-method'],
+                products:products,
+                totalAmount:total,
+                status:status,
+                date:new Date().toLocaleString()
+            }
+
+            db.get().collection(collection.ORDER_COLLECTION).insertOne(orderObj).then((response)=>{
+                db.get().collection(collection.CART_COLLECTION).removeOne({user:objectId(order.userId)})
+                resolve()
+            })
+        })
+    },
+    getCartProductList:(userId)=>{
+        return new Promise(async(resolve,reject)=>{
+            let cart=await db.get().collection(collection.CART_COLLECTION).findOne({user:objectId(userId)})
+            resolve(cart.products)
+        })
+    },
+    getUserOrders:(userId)=>{
+        return new Promise(async(resolve,reject)=>{
+            console.log(userId)
+            let orders=await db.get().collection(collection.ORDER_COLLECTION)
+            .find({userId:objectId(userId)}).toArray()
+            console.log(orders)
+            resolve(orders)
+        })
+    },
+    getOrderProducts:(orderId)=>{
+        return new Promise(async(resolve,reject)=>{
+            let orderItems=await db.get().collection(collection.ORDER_COLLECTION).aggregate([
+               {
+                 $match:{_id:objectId(orderId)}
+            },
+            {
+                $unwind:'$products'
+            },
+            {
+                $project:{
+                    item:"$products.item",
+                    quantity:'$products.quantity'
+                }
+            },
+            {
+                $lookup:{
+                    from:collection.PRODUCT_COLLECTION,
+                    localField:'item',
+                    foreignField:'_id',
+                    as:"product"
+                }
+                
+            },
+            {
+                $project:{
+                    item:1,quantity:1,product:{ $arrayElemAt:['$product',0]}
+                    //BINARY value if we need value then assign 1 otherwise 0
+                }
+            }
+            ]).toArray()
+            console.log(orderItems)
+            resolve(orderItems)
+    })}
+
     
 
 }

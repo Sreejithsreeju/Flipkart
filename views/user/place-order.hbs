@@ -13,6 +13,7 @@
 
                         <label for="Mobile">Mobile</label>
                         <input type="text" id="mobile" name="mobile" class="form-control">
+                        <input type="text" name="userId" id="userId" value="{{user._id}}" hidden>
                     </div>
                 </div>
                 <div class="col-md-4">
@@ -25,7 +26,7 @@
                                 <input type="radio" name="payment-method" value="COD" checked>COD
                             </label>
                             <label for="radio-inline mt-2">
-                                <input type="radio" name="payment-method" value="ONLINE" checked>Online payment
+                                <input type="radio" name="payment-method" value="ONLINE">Online payment
                             </label>
                             <button class="btn btn-primary float-right" type="submit">checkout</button>
                         </div>
@@ -35,3 +36,39 @@
         </form>
     </div>
 </section>
+<script>
+    $("#checkout-form").submit((e)=>{
+        e.preventDefault()
+        $.ajax({
+            url:'/place-order',
+            method:'post',
+            data:$('#checkout-form').serialize(),
+            success:(response)=>{
+                alert(response)
+                if(response.status){
+                        location.href='/order-success'
+                }
+            }
+        })
+    })
+</script>
+
+<style>
+    input[type=radio]{
+        width: 20px;
+        height: 20px;
+
+    }
+    label.radio-inline{
+        display: flex;
+        align-items: center;
+    }
+    .checkout{
+        border: 1px solid black;
+        border-radius: 3px;
+        padding: 30px;
+    }
+    .payment{
+        padding-bottom: 16px;
+    }
+</style>

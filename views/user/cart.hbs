@@ -17,13 +17,14 @@
                     <td>Rs.{{this.product.Price}}</td>
                     
                     <td>
-                        <button class="cart-item-count mr-3" onclick="changeQuantity('{{this._id}}','{{this.product._id}}',-1)">-</button>
+                        
+                        <button class="cart-item-count mr-3" onclick="changeQuantity('{{this._id}}','{{this.product._id}}','{{../user._id}}',-1)">-</button>
                         <span id="{{this.product._id}}">{{this.quantity}}</span>
-                        <button class="cart-item-count ml-3" onclick="changeQuantity('{{this._id}}','{{this.product._id}}',1)">+</button>
+                        <button class="cart-item-count ml-3" onclick="changeQuantity('{{this._id}}','{{this.product._id}}','{{../user._id}}',1)">+</button>
                     </td>
                     <td>
                         {{!-- <a href="" class="btn btn-danger">Remove</a> --}}
-                        <button type="button" class="btn btn-danger" onclick="removeProd('{{this._id}}','{{this.product._id}}')">Remove</button>
+                        <button type="button" class="btn btn-danger" onclick="removeProd('{{this._id}}','{{this.product._id}}','{{../user._id}}')">Remove</button>
                         
                     </td>
                 </tr>
@@ -32,19 +33,19 @@
         </table>
         <hr>
         <div class="float-right pr-5">
-        <h4 class="float-left mr-5">Total:Rs.15000</h4>
-        <a href="/place-order" class="btn btn-success mt-3" style="width:85%"><b>Place Order</b></a>
+        <h4 class="float-left mr-5">Total:Rs.<span id="total">{{totalValue}}</span></h4>
+        {{#if products}}<a href="/place-order" class="btn btn-success mt-3" style="width:85%"><b>Place Order</b></a>{{/if}}
         </div>
     </div>
 </section>
 <script>
-    function changeQuantity(cartId,proId,count){
+    function changeQuantity(cartId,proId,userId,count){
         let quantity=parseInt(document.getElementById(proId).innerHTML)
         count=parseInt(count)
         $.ajax({
             url:"/change-product-quantity",
             data:{
-                
+                user:userId,
                 cart:cartId,
                 product:proId,
                 count:count,
@@ -57,7 +58,10 @@
                     alert("Product removed from cart")
                     location.reload()
                 }else{
+                    //console.log(response)
                     document.getElementById(proId).innerHTML=quantity+count
+                    document.getElementById("total").innerHTML=response.total
+
                 }
                 
             }
@@ -65,12 +69,12 @@
         })
 
     }
-    function removeProd(cartId,proId){
+    function removeProd(cartId,proId,userId){
         
         $.ajax({
             url:"/remove-product",
             data:{
-                
+                user:userId,
                 cart:cartId,
                 product:proId
                 
